@@ -2,12 +2,14 @@ from contextlib import contextmanager
 import os
 import threading
 import time
-from typing import List
+from typing import List, Literal
+import uuid
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 import xgrammar as xgr
 import transformers
 import psutil
+from formatron.schemas.pydantic import ClassSchema
 from rich import print
 
 DEVICE = "cpu"
@@ -160,3 +162,11 @@ class LogitsProcessor(transformers.LogitsProcessor):
         # LogitsProcessor
 
         return scores
+    
+def make_random_string_class(n_columns, cardinality):
+    literals = [tuple([str(uuid.uuid4()) for _ in range(cardinality)]) for _ in range(n_columns)]
+    class RandomString(ClassSchema):
+        __annotations__ = {
+            f"random_string_{i+1}": Literal[literals[i]] for i in range(n_columns)
+        }
+    return RandomString

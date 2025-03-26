@@ -1,19 +1,16 @@
 import time
-from typing import Literal
-import uuid
 from rich import print
 from formatron.formatter import FormatterBuilder
 from formatron.integrations.transformers import create_formatter_logits_processor_list
-from formatron.schemas.pydantic import ClassSchema
 from icecream import ic
 
-from utils import get_model_inputs, get_model_tokenizer_config, perf
+from utils import get_model_inputs, get_model_tokenizer_config, make_random_string_class, perf
 
 t0 = time.time()
 
 batch_size = 100
-cardinality = 50
-n_columns = 1
+cardinality = 200
+n_columns = 2
 conversation = [
     {
         "role": "system",
@@ -24,15 +21,13 @@ conversation = [
 
 model, tokenizer, config = get_model_tokenizer_config()
 model_inputs = get_model_inputs(batch_size, conversation, tokenizer)
-
-class RandomString(ClassSchema):
-    random_string: Literal[tuple([str(uuid.uuid4()) for _ in range(cardinality)])]
+schema = make_random_string_class(n_columns, cardinality)
 
 
 with perf("formatter_builders"):
     formatter_builder = FormatterBuilder()
     formatter_builder.append_line(
-        f"{formatter_builder.json(RandomString, capture_name=None)}"
+        f"{formatter_builder.json(schema, capture_name=None)}"
     )
     formatter_builders = [formatter_builder] * batch_size
 with perf("logits_processor"):

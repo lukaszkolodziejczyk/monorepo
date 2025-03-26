@@ -1,6 +1,3 @@
-from typing import Literal
-import uuid
-from pydantic import BaseModel
 from transformers.generation.logits_process import LogitsProcessorList
 import xgrammar as xgr
 from icecream import ic
@@ -9,12 +6,14 @@ import time
 
 from rich import print
 
-from utils import LogitsProcessor, get_model_inputs, get_model_tokenizer_config, perf
+from utils import LogitsProcessor, get_model_inputs, get_model_tokenizer_config, make_random_string_class, perf
 
 t0 = time.time()
 
+
 batch_size = 100
-cardinality = 50
+cardinality = 200
+n_columns = 2
 conversation = [
     {
         "role": "system",
@@ -24,10 +23,7 @@ conversation = [
 ]
 model, tokenizer, config = get_model_tokenizer_config()
 model_inputs = get_model_inputs(batch_size, conversation, tokenizer)
-
-class RandomString(BaseModel):
-    random_string: Literal[tuple([str(uuid.uuid4()) for _ in range(cardinality)])]
-
+schema = make_random_string_class(n_columns, cardinality)
 
 tokenizer_info = xgr.TokenizerInfo.from_huggingface(
     tokenizer, vocab_size=config.vocab_size
@@ -35,7 +31,7 @@ tokenizer_info = xgr.TokenizerInfo.from_huggingface(
 grammar_compiler = xgr.GrammarCompiler(tokenizer_info)
 with perf("compiled_grammars"):
     compiled_grammars = [
-        grammar_compiler.compile_json_schema(RandomString) for _ in range(batch_size)
+        grammar_compiler.compile_json_schema(schema) for _ in range(batch_size)
     ]
 with perf("logits_processors"):
     logits_processor = LogitsProcessor(compiled_grammars)

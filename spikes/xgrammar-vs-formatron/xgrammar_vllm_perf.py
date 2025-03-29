@@ -1,7 +1,7 @@
 import time
 from vllm import LLM, SamplingParams
 from rich import print
-from utils import make_random_string_class, perf
+from utils import make_random_string_class, perf, set_vllm_version
 from vllm.sampling_params import GuidedDecodingParams
 from vllm.model_executor.guided_decoding.xgrammar_decoding import get_local_xgrammar_guided_decoding_logits_processor
 
@@ -11,7 +11,9 @@ batch_size = 100
 cardinality = 200
 n_columns = 2
 
-llm = LLM(model="facebook/opt-125m")
+set_vllm_version()
+with perf("llm"):
+    llm = LLM(model="facebook/opt-125m")
 schema = make_random_string_class(n_columns, cardinality).model_json_schema()
 
 sampling_params_list = []

@@ -170,3 +170,8 @@ def make_random_string_class(n_columns, cardinality):
             f"random_string_{i+1}": Literal[literals[i]] for i in range(n_columns)
         }
     return RandomString
+
+def set_vllm_version():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device == "cuda":
+        os.environ["VLLM_USE_V1"] = "0"

@@ -4,7 +4,12 @@ from formatron.formatter import FormatterBuilder
 from formatron.integrations.transformers import create_formatter_logits_processor_list
 from icecream import ic
 
-from utils import get_model_inputs, get_model_tokenizer_config, make_random_string_class, perf
+from utils import (
+    get_model_inputs,
+    get_model_tokenizer_config,
+    make_random_string_class,
+    perf,
+)
 
 t0 = time.time()
 

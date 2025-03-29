@@ -2,7 +2,7 @@ import time
 from vllm import LLM, SamplingParams
 from rich import print
 from formatron.integrations.vllm import create_formatters_logits_processor
-from utils import make_random_string_class, perf
+from utils import make_random_string_class, perf, set_vllm_version
 from formatron.formatter import FormatterBuilder
 
 t0 = time.time()
@@ -11,7 +11,9 @@ batch_size = 100
 cardinality = 200
 n_columns = 2
 
-llm = LLM(model="facebook/opt-125m")
+set_vllm_version()
+with perf("llm"):
+    llm = LLM(model="facebook/opt-125m")
 schema = make_random_string_class(n_columns, cardinality)
 
 with perf("formatter_builders"):
@@ -24,7 +26,9 @@ with perf("formatter_builders"):
 with perf("logits_processor"):
     logits_processor = create_formatters_logits_processor(llm, formatter_builders)
 
-sampling_params = SamplingParams(temperature=1.0, top_p=1.0, max_tokens=512, logits_processors=[logits_processor])
+sampling_params = SamplingParams(
+    temperature=1.0, top_p=1.0, max_tokens=512, logits_processors=[logits_processor]
+)
 
 prompt = "JSON:"
 prompts = [prompt] * batch_size

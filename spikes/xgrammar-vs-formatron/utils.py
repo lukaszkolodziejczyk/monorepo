@@ -12,7 +12,7 @@ import psutil
 from formatron.schemas.pydantic import ClassSchema
 from rich import print
 
-DEVICE = "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class MemoryMonitor(threading.Thread):
@@ -65,9 +65,13 @@ def get_model_tokenizer_config():
 
 def get_model_inputs(batch_size, conversation, tokenizer):
     conversations = [conversation] * batch_size
-    texts = [tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=True) for c in conversations]
+    texts = [
+        tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=True)
+        for c in conversations
+    ]
     model_inputs = tokenizer(texts, padding=True, return_tensors="pt").to(DEVICE)
     return model_inputs
+
 
 class LogitsProcessor(transformers.LogitsProcessor):
     """
@@ -98,7 +102,9 @@ class LogitsProcessor(transformers.LogitsProcessor):
         - Note that this implementation may contain extra overhead.
     """
 
-    def __init__(self, compiled_grammar: xgr.CompiledGrammar | List[xgr.CompiledGrammar]):
+    def __init__(
+        self, compiled_grammar: xgr.CompiledGrammar | List[xgr.CompiledGrammar]
+    ):
         """Initialize the LogitsProcessor.
 
         Parameters
@@ -107,13 +113,19 @@ class LogitsProcessor(transformers.LogitsProcessor):
             One or more grammars compiled according to the given grammar and the model's tokenizer_info.
         """
         self.matchers: List[xgr.GrammarMatcher] = []
-        self.compiled_grammars = compiled_grammar if isinstance(compiled_grammar, list) else [compiled_grammar]
+        self.compiled_grammars = (
+            compiled_grammar
+            if isinstance(compiled_grammar, list)
+            else [compiled_grammar]
+        )
         self.full_vocab_size = self.compiled_grammars[0].tokenizer_info.vocab_size
         self.token_bitmask = None
         self.prefilled = False
         self.batch_size = 0
 
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+    def __call__(
+        self, input_ids: torch.LongTensor, scores: torch.FloatTensor
+    ) -> torch.FloatTensor:
         """
         Accept token sampled in the last iteration, fill in bitmask, and apply bitmask to logits.
 
@@ -123,12 +135,21 @@ class LogitsProcessor(transformers.LogitsProcessor):
         # Lazily initialize GrammarMatchers and bitmask
         if len(self.matchers) == 0:
             self.batch_size = input_ids.shape[0]
-            self.compiled_grammars = self.compiled_grammars if len(self.compiled_grammars) > 1 else self.compiled_grammars * self.batch_size
-            assert len(self.compiled_grammars) == self.batch_size, "The number of compiled grammars must be equal to the batch size."
+            self.compiled_grammars = (
+                self.compiled_grammars
+                if len(self.compiled_grammars) > 1
+                else self.compiled_grammars * self.batch_size
+            )
+            assert len(self.compiled_grammars) == self.batch_size, (
+                "The number of compiled grammars must be equal to the batch size."
+            )
             self.matchers = [
-                xgr.GrammarMatcher(self.compiled_grammars[i]) for i in range(self.batch_size)
+                xgr.GrammarMatcher(self.compiled_grammars[i])
+                for i in range(self.batch_size)
             ]
-            self.token_bitmask = xgr.allocate_token_bitmask(self.batch_size, self.full_vocab_size)
+            self.token_bitmask = xgr.allocate_token_bitmask(
+                self.batch_size, self.full_vocab_size
+            )
 
         if input_ids.shape[0] != self.batch_size:
             raise RuntimeError(
@@ -162,16 +183,21 @@ class LogitsProcessor(transformers.LogitsProcessor):
         # LogitsProcessor
 
         return scores
-    
+
+
 def make_random_string_class(n_columns, cardinality):
-    literals = [tuple([str(uuid.uuid4()) for _ in range(cardinality)]) for _ in range(n_columns)]
+    literals = [
+        tuple([str(uuid.uuid4()) for _ in range(cardinality)]) for _ in range(n_columns)
+    ]
+
     class RandomString(ClassSchema):
         __annotations__ = {
-            f"random_string_{i+1}": Literal[literals[i]] for i in range(n_columns)
+            f"random_string_{i + 1}": Literal[literals[i]] for i in range(n_columns)
         }
+
     return RandomString
 
+
 def set_vllm_version():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    if device == "cuda":
+    if DEVICE == "cuda":
         os.environ["VLLM_USE_V1"] = "0"

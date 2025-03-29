@@ -6,3 +6,4 @@ icecream
 torch
 transformers
 vllm
+accelerate

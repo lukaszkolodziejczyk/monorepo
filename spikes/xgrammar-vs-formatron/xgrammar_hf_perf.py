@@ -6,7 +6,13 @@ import time
 
 from rich import print
 
-from utils import LogitsProcessor, get_model_inputs, get_model_tokenizer_config, make_random_string_class, perf
+from utils import (
+    LogitsProcessor,
+    get_model_inputs,
+    get_model_tokenizer_config,
+    make_random_string_class,
+    perf,
+)
 
 t0 = time.time()
 

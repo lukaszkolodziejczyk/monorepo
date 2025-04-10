@@ -9,7 +9,7 @@ import json
 # mlc-llm works with weights in MLC format
 # model = "HF://mlc-ai/Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
 model = "HF://mlc-ai/Qwen2.5-1.5B-Instruct-q4f16_1-MLC"
-n_requests = 1_000
+n_requests = 50_000
 prompts = [' {"question": "What is the meaning of life?"}'] * n_requests
 
 class Answer(BaseModel):
@@ -21,7 +21,7 @@ async def main():
         mode="server", # "local", "interactive", "server"
         engine_config=EngineConfig(
             # max_total_sequence_length=26,  # runtime; influences KV cache size; this is input+output length
-            max_single_sequence_length=500,  # changing results in model recompilation; this is input+output length
+            max_single_sequence_length=100,  # changing results in model recompilation; this is input+output length
         )
 
     )

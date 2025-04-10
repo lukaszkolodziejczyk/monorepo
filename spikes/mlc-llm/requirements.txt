@@ -1,0 +1,3 @@
+--find-links https://mlc.ai/wheels
+mlc-llm-nightly-cpu
+mlc-ai-nightly-cpu
